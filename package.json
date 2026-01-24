@@ -10,7 +10,9 @@
     "sqlite3": "^5.0.2"
   },
   "scripts": {
-    "scrape": "node scrape.js"
+    "scrape": "node scrape.js",
+    "start": "node bot.js",
+    "read": "node dbread.js"
   },
   "type": "module"
 }

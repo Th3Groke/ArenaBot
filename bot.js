@@ -4,6 +4,7 @@ import cron from "node-cron";
 import { Months, maintenanceTime } from "./consts.js";
 import { exec } from "child_process";
 import "dotenv/config";
+import fs from "fs/promises";
 
 const db = new Database("events.sqlite", { readonly: true });
 
@@ -26,7 +27,6 @@ client.once("ready", () => {
 
   cron.schedule(maintenanceTime, () => {
     console.log("🕒 Starting daily database maintenance...");
-    changeDailyStatus();
 
     exec("node dbSave.js", (error, stdout, stderr) => {
       if (error) {
@@ -41,8 +41,10 @@ client.once("ready", () => {
         console.error(`❌ Error running dbRemoveOutdated: ${error.message}`);
         return;
       }
+      if (stderr) console.error(`⚠️ dbRemoveOutdated stderr: ${stderr}`);
       console.log(`✅ dbRemoveOutdated Output:\n${stdout}`);
     });
+    changeDailyStatus();
   });
 });
 
@@ -97,7 +99,47 @@ async function changeDailyStatus() {
       console.error(err);
     }
   }
+  console.log(`⚠️ channel has this name already`);
 }
+
+//!clear handling
+client.on("messageCreate", async (message) => {
+  if (message.author.bot) return;
+
+  let regeTest = new RegExp("!clear [0-9]");
+  if (regeTest.test(message.content)) {
+    const number = parseInt(message.content.split(" ")[1]);
+    try {
+      await message.channel.bulkDelete(number);
+    } catch (err) {
+      message.channel.send(err.message);
+      return;
+    }
+
+    message.channel.send(`removed ${number} numbers. :+1:`);
+  }
+});
+
+//!help handling
+async function readHelpFile() {
+  try {
+    const data = await fs.readFile("helpMessage.txt", "utf8");
+    console.log(data);
+    return data;
+  } catch (err) {
+    console.error("Error reading file:", err);
+    return "Could not load help message.";
+  }
+}
+client.on("messageCreate", async (message) => {
+  if (message.author.bot) return;
+
+  if (message.content === "!help") {
+    const helpMessage = await readHelpFile();
+    message.reply(helpMessage);
+    return;
+  }
+});
 
 //Handling !events message
 client.on("messageCreate", (message) => {

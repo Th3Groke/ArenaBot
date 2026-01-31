@@ -168,6 +168,50 @@ client.on("messageCreate", (message) => {
   }
 });
 
+//handling !eventsall
+
+client.on("messageCreate", (message) => {
+  if (message.author.bot) return;
+
+  if (message.content == "!eventsall") {
+    const rows = db
+      .prepare(
+        "SELECT eventName, eventDateString AS date from events ORDER BY startDate",
+      )
+      .all();
+
+    if (rows.length === 0) {
+      message.author.send("no data available.");
+      return;
+    }
+
+    const eventList = rows
+      .map((row) => `• **${row.eventName}**\n   📅 ${row.date}`)
+      .join("\n\n");
+    message.author.send(`Here is the list of upcomming events:`);
+    const messageChunks = splitMessage(eventList);
+    for (const chunk of messageChunks) {
+      message.author.send(chunk);
+    }
+  }
+});
+
+let splitMessage = (text, maxLength = 2000) => {
+  const messages = [];
+  while (text.length > 0) {
+    if (text.length <= maxLength) {
+      messages.push(text);
+      break;
+    }
+    let splitIndex = text.lastIndexOf("\n", maxLength);
+    if (splitIndex <= 0) splitIndex = maxLength;
+
+    messages.push(text.substring(0, splitIndex));
+    text = text.substring(splitIndex).trim();
+  }
+  return messages;
+};
+
 //Handling !arena message
 client.on("messageCreate", (message) => {
   if (message.author.bot) return;

@@ -1,10 +1,11 @@
 import { Client, GatewayIntentBits, MessageFlags } from "discord.js";
 import Database from "better-sqlite3";
 import cron from "node-cron";
-import { Months, maintenanceTime } from "./consts.js";
+import { maintenanceTime } from "./consts.js";
 import { exec } from "child_process";
 import "dotenv/config";
 import fs from "fs/promises";
+import { start } from "repl";
 
 const db = new Database("events.sqlite", { readonly: true });
 
@@ -52,71 +53,74 @@ client.once("ready", () => {
 async function changeDailyStatus() {
   const channel = client.channels.cache.get(process.env.PARKING_CHANNEL_ID);
   if (!channel) {
-    console.error("❌Could not find the parking channel. Check ID in .env");
+    console.error("❌ Could not find the parking channel.");
     return;
   }
-  const rows = db.prepare("SELECT title, date FROM events").all();
+
+  const rows = db
+    .prepare(
+      "SELECT eventName, startDate, endDate FROM events ORDER BY startDate LIMIT 10",
+    )
+    .all();
 
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  today.setHours(0, 0, 0, 0); // Normalize to start of day
+  const todayTime = today.getTime();
+
   let eventToday = false;
 
-  rows.forEach((row) => {
-    const parts = row.date.split(" ");
-    const day = parseInt(parts[0]);
-    const month = parts[1];
-    const year = parseInt(parts[2]);
-    if (parts.size > 3) {
-      const endDay = parseInt(parts[4]);
-      const endMonth = parts[5];
-      const endYear = parseInt(parts[6]);
-      const eventStartDate = new Date(year, Months[month], day);
-      const eventEndDate = new Date(endYear.Months[endMonth], endDay);
+  for (const row of rows) {
+    const start = new Date(row.startDate);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(row.endDate);
+    end.setHours(0, 0, 0, 0);
 
-      if (
-        eventStartDate.toString() <= today.toString() &&
-        eventEndDate.toString >= today.toString
-      ) {
-        eventToday = true;
-        return;
-      }
-    }
-    const eventDate = new Date(year, Months[month], day);
-    if (eventDate.toString() === today.toString()) {
+    const startTime = start.getTime();
+    const endTime = end.getTime();
+
+    if (todayTime >= startTime && todayTime <= endTime) {
       eventToday = true;
-      return;
+      break;
     }
-  });
+  }
+
   const newName = eventToday
     ? "Parking: 🛑 Closed today"
     : "Parking: 🟢 Open today";
-  if (channel.name != newName) {
+
+  if (channel.name !== newName) {
     try {
       await channel.setName(newName);
-      console.log("✅channel name updated");
+      console.log(`✅ Channel name updated to: ${newName}`);
     } catch (err) {
-      console.error("❌failed to rename the channel");
-      console.error(err);
+      console.error("❌ Failed to rename the channel:", err.message);
     }
+  } else {
+    console.log(`ℹ️ Channel name is already correct: ${newName}`);
   }
-  console.log(`⚠️ channel has this name already`);
 }
 
 //!clear handling
 client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
 
-  let regeTest = new RegExp("!clear [0-9]");
+  let regeTest = new RegExp("!clear [1-9]\d*");
   if (regeTest.test(message.content)) {
+    if (message.author.id == 1023198285369983016) {
+      message.channel.send("nope :middle_finger:");
+      return;
+    }
     const number = parseInt(message.content.split(" ")[1]);
     try {
-      await message.channel.bulkDelete(number);
+      await message.channel.bulkDelete(number + 1);
     } catch (err) {
       message.channel.send(err.message);
       return;
     }
-
-    message.channel.send(`removed ${number} numbers. :+1:`);
+    message.channel.send(`removed ${number} messages. :+1:`);
+    setTimeout(() => {
+      message.channel.bulkDelete(1);
+    }, 2000);
   }
 });
 
@@ -124,7 +128,6 @@ client.on("messageCreate", async (message) => {
 async function readHelpFile() {
   try {
     const data = await fs.readFile("helpMessage.txt", "utf8");
-    console.log(data);
     return data;
   } catch (err) {
     console.error("Error reading file:", err);
@@ -146,16 +149,19 @@ client.on("messageCreate", (message) => {
   if (message.author.bot) return;
 
   if (message.content === "!events") {
-    const rows = db.prepare("SELECT title, date FROM events LIMIT 10").all();
+    const rows = db
+      .prepare(
+        "SELECT eventName, eventDateString AS date FROM events ORDER BY startDate LIMIT 10",
+      )
+      .all();
 
-    console.log(rows.length);
     if (rows.length === 0) {
       message.reply("No events found in the database.");
       return;
     }
 
     const eventList = rows
-      .map((row) => `• **${row.title}**\n   📅 ${row.date}`)
+      .map((row) => `• **${row.eventName}**\n   📅 ${row.date}`)
       .join("\n\n");
 
     message.reply(`Here are the upcoming event:\n\n${eventList}`);
@@ -167,7 +173,11 @@ client.on("messageCreate", (message) => {
   if (message.author.bot) return;
 
   if (message.content === "!arena") {
-    const row = db.prepare("SELECT title, date FROM events LIMIT 1").get();
+    const row = db
+      .prepare(
+        "SELECT eventName, startDate, endDate, eventDateString FROM events ORDER BY startDate LIMIT 1",
+      )
+      .get();
 
     if (!row) {
       message.reply("Parking is open today.✅ No upcomming events found");
@@ -175,48 +185,28 @@ client.on("messageCreate", (message) => {
     }
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const eventDateParts = row.date.split(" ");
-    if (!row.date.includes("-")) {
-      const day = parseInt(eventDateParts[0]);
-      const monthName = eventDateParts[1];
-      const year = parseInt(eventDateParts[2]);
-      const eventDate = new Date(year, Months[monthName], day);
-
-      console.log(eventDate.toString());
-      if (eventDate.toString() === today.toString()) {
+    const startDate = new Date(row.startDate).setHours(0, 0, 0, 0);
+    const endDate = new Date(row.endDate).setHours(0, 0, 0, 0);
+    if (startDate == endDate) {
+      if (startDate === today) {
         message.reply(
-          `Parking today is closed 🛑. The event today is ${row.title}`,
+          `Parking today is closed 🛑. The event today is ${row.eventName}`,
         );
         return;
       }
       message.reply(
-        `Parking is open today.✅ The nearest event: ${row.title} is on ${row.date}`,
+        `Parking is open today.✅ The nearest event: ${row.eventName} is on ${row.eventDateString}`,
       );
       return;
-    }
-
-    if (row.date.includes("-")) {
-      const startDay = parseInt(eventDateParts[0]);
-      const startMonth = eventDateParts[1];
-      const startYear = parseInt(eventDateParts[2]);
-      const endDay = parseInt(eventDateParts[4]);
-      const endMonth = eventDateParts[5];
-      const endYear = parseInt(eventDateParts[6]);
-
-      const eventStartDate = new Date(startYear, Months[startMonth], startDay);
-      const eventEndDate = new Date(endYear, Months[endMonth], endDay);
-
-      if (
-        today.toString() >= eventStartDate.toString() &&
-        today.toString() <= eventEndDate.toString()
-      ) {
+    } else {
+      if (today >= startDate && today <= endDate) {
         message.reply(
-          `Parking today is closed 🛑. The event today is ${row.title}`,
+          `Parking today is closed 🛑. The event today is ${row.eventName}`,
         );
         return;
       } else {
         message.reply(
-          `Parking is open today. ✅ The nearest event: ${row.title} is on ${row.date}`,
+          `Parking is open today. ✅ The nearest event: ${row.eventName} is on ${row.eventDateString}`,
         );
       }
     }

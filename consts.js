@@ -14,4 +14,28 @@ export const Months = {
   grudnia: 11,
 };
 
+export const MonthNum = [
+  "stycznia",
+  "lutego",
+  "marca",
+  "kwietnia",
+  "maja",
+  "czerwca",
+  "lipca",
+  "sierpnia",
+  "września",
+  "października",
+  "listopada",
+  "grudnia",
+];
+
+export class Event {
+  constructor(eventName, startDate, endDate, eventDateString) {
+    this.eventName = eventName;
+    this.startDate = startDate;
+    this.endDate = endDate;
+    this.eventDateString = eventDateString;
+  }
+}
+
 export const maintenanceTime = "0 3 * * *";

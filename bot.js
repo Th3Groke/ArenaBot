@@ -25,6 +25,7 @@ client.once("ready", () => {
   //FOR TESTING
   changeDailyStatus();
   //
+  client.user.setActivity("!help");
 
   cron.schedule(maintenanceTime, () => {
     console.log("🕒 Starting daily database maintenance...");

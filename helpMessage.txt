@@ -1,0 +1,5 @@
+## available commands:
+* `!arena` - checks if they parking is open for current day.
+* `!clear [number]` - removes specified number of messages.
+* `!events` - prints a list of 10 upcoming events and their dates. 
+* `!help` - shows available commands.

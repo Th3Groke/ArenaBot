@@ -30,7 +30,7 @@ async function scrape() {
   });
   console.log("scraped website. Found: " + events.length + " events. ");
   console.log(events);
-  return events;
   await browser.close();
+  return events;
 }
 export const scrapedData = await scrape();

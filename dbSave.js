@@ -8,7 +8,7 @@ db.prepare(
 ).run();
 
 const rows = db.prepare("SELECT eventName FROM events").all();
-const existingTitles = new Set(rows.map((r) => r.title));
+const existingTitles = new Set(rows.map((r) => r.eventName));
 
 const insert = db.prepare(
   "INSERT INTO events (eventName, startDate, endDate, eventDateString) VALUES (?, ?, ?, ?)",

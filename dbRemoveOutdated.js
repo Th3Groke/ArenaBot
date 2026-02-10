@@ -8,10 +8,9 @@ const rows = db.prepare("SELECT * FROM events").all();
 const today = new Date();
 today.setHours(0, 0, 0, 0);
 let count = 0;
-
 const deleteItem = db.prepare("DELETE FROM events WHERE id = ?");
 rows.forEach((row) => {
-  if (rows.endDate < today) {
+  if (row.endDate < today.toISOString()) {
     deleteItem.run(row.id);
     count++;
   }

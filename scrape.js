@@ -5,7 +5,13 @@ import puppeteer from "puppeteer";
 const ADDRESS = "https://prezeroarenagliwice.pl/wydarzenia/";
 
 async function scrape() {
-  const browser = await puppeteer.launch({ headless: "new" });
+  const browser = await puppeteer.launch({ headless: "new",
+                                           args:['--no-sandbox',
+                                           '--disable-setuid-sandbox',
+                                           '--disable-dev-shm-usage',
+                                           '--disable-gpu'
+                                           ]
+                                          });
   const page = await browser.newPage();
 
   console.log("connecting to the page...");

@@ -14,6 +14,7 @@ const insert = db.prepare(
   "INSERT INTO events (eventName, startDate, endDate, eventDateString) VALUES (?, ?, ?, ?)",
 );
 
+//Preparing the transaction function
 const insertMany = db.transaction((data) => {
   let count = 0;
   for (const element of data) {
@@ -32,6 +33,7 @@ const insertMany = db.transaction((data) => {
 });
 let eventsList = [];
 scrapedData.forEach((element) => {
+ //formating date to date format
   const dateParts = element.date.split(" ");
   const startMonth = Months[dateParts[1]];
   console.log(startMonth);

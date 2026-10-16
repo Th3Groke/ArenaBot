@@ -5,15 +5,17 @@ import puppeteer from "puppeteer";
 const ADDRESS = "https://prezeroarenagliwice.pl/wydarzenia/";
 
 async function scrape() {
-  const browser = await puppeteer.launch({ headless: "new",
-                                           args:['--no-sandbox',
-                                           '--disable-setuid-sandbox',
-                                           '--disable-dev-shm-usage',
-                                           '--disable-gpu'
-                                           ]
-                                          });
-  const page = await browser.newPage();
+  const browser = await puppeteer.launch({
+	executalbePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+	headless: "new",
+        args:['--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu'
+        ]
+	});
 
+  const page = await browser.newPage();
   console.log("connecting to the page...");
   await page.goto(ADDRESS, { waitUntil: "networkidle2" });
   const events = await page.evaluate(() => {

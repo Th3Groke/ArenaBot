@@ -1,5 +1,5 @@
 import Database from "better-sqlite3";
-
+import db_path from "consts.js";
 const db = new Database("events.sqlite");
 
 const rows = db.prepare("SELECT * FROM events").all();

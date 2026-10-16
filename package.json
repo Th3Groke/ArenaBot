@@ -6,7 +6,7 @@
     "discord.js": "^14.25.1",
     "dotenv": "^17.2.3",
     "node-cron": "^4.2.1",
-    "puppeteer": "^24.32.0",
+    "puppeteer": "^25.14.0",
     "sqlite3": "^5.0.2"
   },
   "scripts": {

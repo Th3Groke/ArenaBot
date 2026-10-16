@@ -1,8 +1,8 @@
 import Database from "better-sqlite3";
 import { scrapedData } from "./scrape.js";
-import { Event, Months } from "./consts.js";
+import { Event, Months, db_path } from "./consts.js";
 
-const db = new Database("events.sqlite");
+const db = new Database(db_path);
 db.prepare(
   "CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY AUTOINCREMENT, eventName TEXT, startDate TEXT, endDate TEXT,eventDateString TEXT)",
 ).run();

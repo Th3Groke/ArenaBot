@@ -1,4 +1,4 @@
-//Months class to help events date comparing\
+//Months class to help events date comparing
 export const Months = {
   styczeń: 0,
   luty: 1,
@@ -37,5 +37,6 @@ export class Event {
     this.eventDateString = eventDateString;
   }
 }
+export const db_path = "./data/events.sqlite"
 
 export const maintenanceTime = "0 3 * * *";

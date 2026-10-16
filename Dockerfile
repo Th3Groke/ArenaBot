@@ -1,5 +1,5 @@
 FROM node:22-bookworm-slim
-RUN apt-get update && apt-get install -y --no-install-recomends\
+RUN apt-get update && apt-get install -y --no-install-recommends \
 chromium \
 fonts-liberation \
 ca-certificates \
@@ -13,5 +13,6 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 RUN npm ci --omit=dev
 COPY . .
+RUN chown -R node:node /usr/src/app
 USER node
 CMD ["npm", "start"]
